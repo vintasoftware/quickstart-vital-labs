@@ -4,12 +4,88 @@ import { VStack, Heading, HStack, Text, Box, Button, Modal,
     ModalHeader,
     ModalFooter,
     ModalBody,
-    ModalCloseButton, Table, TableContainer, TableCaption, Thead, Tr, Th, Tbody, Td } from "@chakra-ui/react";
+    ModalCloseButton, Table, TableContainer, TableCaption, Thead, Tr, Th, Tbody, Td, useDisclosure,
+    FormControl,
+    FormLabel,
+    FormErrorMessage,
+    FormHelperText,
+    Select } from "@chakra-ui/react";
+import { fetcher } from "../../lib/client";
+import useSWR from "swr";
+export const OrderTestDialog = () => {
+  // Add useDisclosure hook to control the modal
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const { data } = useSWR("/users/", fetcher);
 
-  export const OrderTestDialog = () => {
-    return (
-        <Box>
-            <Button>Order Test</Button>
-        </Box>
-    )
-  }
+  const usersFiltered = data?.users ? data.users : [];
+  
+  return (
+    <Box>
+      <Button colorScheme="blue" onClick={onOpen}>Order Test</Button>
+      
+      <Modal isOpen={isOpen} onClose={onClose} size="6xl">
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Order Test</ModalHeader>
+          <ModalCloseButton />
+          
+          <ModalBody>
+            <VStack spacing={6} align="stretch">
+              <Text fontWeight="medium">Please fill out the form below to order tests:</Text>
+              
+              <FormControl isRequired>
+                <FormLabel>Patient</FormLabel>
+                <Select placeholder="Select patient">
+                  {usersFiltered.map((user) => (
+                    <option key={user.user_id} value={user.user_id}>
+                      {user.client_user_id}
+                    </option>
+                  ))}
+                </Select>
+                <FormHelperText>Select the patient for whom the test is being ordered</FormHelperText>
+              </FormControl>
+              
+              <FormControl isRequired>
+                <FormLabel>Payor</FormLabel>
+                <Select placeholder="Select payor">
+                  <option value="self">Self</option>
+                  <option value="relative">Relative</option>
+                  <option value="other">Other</option>
+                </Select>
+                <FormHelperText>Select who will be paying for the test</FormHelperText>
+              </FormControl>
+              
+              <FormControl isRequired>
+                <FormLabel>Lab Test Collection</FormLabel>
+                <Select placeholder="Select lab test collection">
+                  <option value="basic">Basic Health Panel</option>
+                  <option value="comprehensive">Comprehensive Metabolic Panel</option>
+                  <option value="cardiac">Cardiac Health Assessment</option>
+                  <option value="thyroid">Thyroid Function Panel</option>
+                  <option value="vitamin">Vitamin & Nutrition Panel</option>
+                </Select>
+                <FormHelperText>Select the lab test collection you want to order</FormHelperText>
+              </FormControl>
+              
+              <Box borderWidth="1px" borderRadius="lg" p={4} mt={2}>
+                <Heading size="sm" mb={3}>Selected Test Collection Details</Heading>
+                <Text fontSize="sm" color="gray.600">
+                  Please select a lab test collection to see details
+                </Text>
+              </Box>
+            </VStack>
+          </ModalBody>
+
+          <ModalFooter>
+            <Button variant="ghost" mr={3} onClick={onClose}>
+              Cancel
+            </Button>
+            <Button colorScheme="blue">
+              Confirm Order
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+    </Box>
+  )
+}
