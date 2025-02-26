@@ -1,15 +1,21 @@
-import { VStack, Heading, HStack, Text, Box, Button, Modal,
+import { VStack,
+    Heading,
+    Text,
+    Box,
+    Button,
+    Modal,
     ModalOverlay,
     ModalContent,
     ModalHeader,
     ModalFooter,
     ModalBody,
-    ModalCloseButton, Table, TableContainer, TableCaption, Thead, Tr, Th, Tbody, Td, useDisclosure,
+    ModalCloseButton,
+    useDisclosure,
     FormControl,
     FormLabel,
-    FormErrorMessage,
     FormHelperText,
-    Select } from "@chakra-ui/react";
+    Select
+} from "@chakra-ui/react";
 import { fetcher } from "../../lib/client";
 import useSWR from "swr";
 export const OrderTestDialog = () => {
@@ -54,10 +60,20 @@ export const OrderTestDialog = () => {
                 </Select>
                 <FormHelperText>Select who will be paying for the test</FormHelperText>
               </FormControl>
+
+              <FormControl isRequired>
+                <FormLabel>Collection Method</FormLabel>
+                <Select placeholder="Select Collection Method">
+                  <option value="at-home">At-Home</option>
+                  <option value="walk-in">Walk-In</option>
+                  <option value="self-test-kit">Self-test kit</option>
+                </Select>
+                <FormHelperText>Select who will be paying for the test</FormHelperText>
+              </FormControl>
               
               <FormControl isRequired>
-                <FormLabel>Lab Test Collection</FormLabel>
-                <Select placeholder="Select lab test collection">
+                <FormLabel>Lab Test Template</FormLabel>
+                <Select placeholder="Select lab test template">
                   <option value="basic">Basic Health Panel</option>
                   <option value="comprehensive">Comprehensive Metabolic Panel</option>
                   <option value="cardiac">Cardiac Health Assessment</option>

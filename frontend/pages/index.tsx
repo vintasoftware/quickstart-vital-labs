@@ -7,7 +7,7 @@ import useSWR from "swr";
 import { fetcher } from "../lib/client";
 import { SleepPanel } from "../components/dashboard/SleepPanel";
 import { ActivityPanel } from "../components/dashboard/ActivityPanel";
-import { LabTestsTable } from "../components/dashboard/LabTestsTable";
+import { LabOrders } from "../components/dashboard/LabOrders";
 const Home: NextPage = () => {
   const [userID, setUserID] = useState(null);
   const { data } = useSWR("/users/", fetcher);
@@ -67,7 +67,7 @@ const Home: NextPage = () => {
             {/* Lab Orders */}
             <Box width={"100%"}>
               <Card>
-                <LabTestsTable />
+                <LabOrders />
               </Card>
             </Box>
           </TabPanel>
