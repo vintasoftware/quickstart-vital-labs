@@ -67,3 +67,8 @@ def get_users(user_id: str, start_date: str, end_date: str):
     body = client.Body.get(user_id, start_date, end_date)
     workouts = client.Workouts.get(user_id, start_date, end_date)
     return {"sleep": sleep, "activity": activity, "body": body, "workouts": workouts}
+
+
+@app.get("/tests/")
+def get_tests():
+    return client.lab_tests.get()
