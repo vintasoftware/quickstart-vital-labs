@@ -42,7 +42,7 @@ export const OrderTestDialog = () => {
               <FormControl isRequired>
                 <FormLabel>Patient</FormLabel>
                 <Select placeholder="Select patient">
-                  {usersFiltered.map((user) => (
+                  {usersFiltered.map((user: any) => (
                     <option key={user.user_id} value={user.user_id}>
                       {user.client_user_id}
                     </option>

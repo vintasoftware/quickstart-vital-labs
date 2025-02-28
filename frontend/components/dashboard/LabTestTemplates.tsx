@@ -34,7 +34,7 @@ export const LabTestTemplates = ({ initialTemplates = [] }: LabTestTemplatesProp
   };
 
   return (
-    <Card height="100%">
+    <Card>
       <Heading size="md" mb={4}>Lab Test Templates</Heading>
       <Box><CreateLabTestTemplateDialog /></Box>
       <TableContainer width="100%">
@@ -48,7 +48,7 @@ export const LabTestTemplates = ({ initialTemplates = [] }: LabTestTemplatesProp
           </Thead>
           <Tbody>
             {templates.length > 0 ? (
-              templates.map((template) => (
+              templates.map((template: any) => (
                 <>
                   <Tr key={template.id} cursor="pointer" onClick={() => toggleTemplateExpansion(template.id)}>
                     <Td fontWeight="bold">{template.name}</Td>
@@ -71,7 +71,7 @@ export const LabTestTemplates = ({ initialTemplates = [] }: LabTestTemplatesProp
                               </Tr>
                             </Thead>
                             <Tbody>
-                              {template.tests.map((test, idx) => (
+                              {template.tests.map((test: any, idx: any) => (
                                 <Tr key={idx}>
                                   <Td>{test.name}</Td>
                                   <Td>{test.description}</Td>

@@ -43,9 +43,17 @@ const defaultTemplatesList = [
     }
 ];
 
+// Define an interface for your test objects
+interface LabTest {
+  name: string;
+  date: string;
+  user: string;
+  status: string;
+}
+
 export const LabOrders = () => {
-  // You can use this state to store lab test data when you have it
-  const [tests, setTests] = useState([]);
+  // Specify the type when initializing the state
+  const [tests, setTests] = useState<LabTest[]>([]);
 
   useEffect(() => {
     setTests(defaultTestsList);
@@ -54,10 +62,12 @@ export const LabOrders = () => {
   return (
     <HStack width={"100%"} alignItems="stretch" height="100%">
         <VStack width="50%" height="100%">
-            <Card height="100%">
-                <Heading>Lab Test Orders</Heading>
-                <Box><OrderTestDialog /></Box>
-                <LabTestOrdersTable tests={tests} />
+            <Card>
+                <Box height="100%">
+                    <Heading>Lab Test Orders</Heading>
+                    <Box><OrderTestDialog /></Box>
+                    <LabTestOrdersTable tests={tests} />
+                </Box>
             </Card>
         </VStack>
         <VStack width="50%" height="100%">

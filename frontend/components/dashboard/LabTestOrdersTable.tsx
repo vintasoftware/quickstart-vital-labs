@@ -28,7 +28,7 @@ export const LabTestOrdersTable = ({ tests }: LabTestOrdersTableProps) => {
         </Thead>
         <Tbody>
           {tests.length > 0 ? (
-            tests.map((test, index) => (
+            tests.map((test: any, index: any) => (
               <Tr key={index}>
                 <Td>{test.name}</Td>
                 <Td>{test.date}</Td>

@@ -25,7 +25,9 @@ import useSWR from "swr";
 export const CreateLabTestTemplateDialog = () => {
   // Add useDisclosure hook to control the modal
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const { data } = useSWR("/api/tests", fetcher);
+  const { data } = useSWR("/tests/", fetcher);
+
+  console.log(data);
 
   const availableTests = data?.tests || [];
   
@@ -61,7 +63,7 @@ export const CreateLabTestTemplateDialog = () => {
                 
                 <VStack align="stretch" spacing={2} maxH="300px" overflowY="auto">
                   {availableTests.length > 0 ? (
-                    availableTests.map((test) => (
+                    availableTests.map((test: any) => (
                       <Checkbox key={test.id} value={test.id}>
                         {test.name} - {test.description}
                       </Checkbox>
