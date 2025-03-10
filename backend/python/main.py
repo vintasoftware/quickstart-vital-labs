@@ -77,3 +77,8 @@ def get_users(user_id: str, start_date: str, end_date: str):
 @app.get("/tests/")
 def get_tests():
     return client.lab_tests.get()
+
+
+@app.get("/markers/")
+def get_markers():
+    return client.lab_tests.get_markers()

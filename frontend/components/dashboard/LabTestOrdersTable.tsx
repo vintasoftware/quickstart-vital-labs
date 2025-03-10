@@ -1,5 +1,4 @@
 import { TableContainer, Table, TableCaption, Thead, Tr, Th, Tbody, Td } from "@chakra-ui/react";
-import { useState, useEffect } from "react";
 
 // Define the test type
 interface LabTest {

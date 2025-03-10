@@ -1,7 +1,9 @@
 import { VStack, Heading, Text, Box, Button, Table, TableContainer, Thead, Tr, Th, Tbody, Td } from "@chakra-ui/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "../Card";
 import { CreateLabTestTemplateDialog } from "./CreateLabTestTemplateDialog";
+import { fetcher } from "../../lib/client";
+import useSWR from "swr";
 
 // Define the interface for a test within a template
 interface TemplateTest {
@@ -24,6 +26,13 @@ interface LabTestTemplatesProps {
 export const LabTestTemplates = ({ initialTemplates = [] }: LabTestTemplatesProps) => {
   const [templates, setTemplates] = useState<LabTestTemplate[]>(initialTemplates);
   const [expandedTemplate, setExpandedTemplate] = useState<number | null>(null);
+  const { data } = useSWR("/tests/", fetcher);
+
+  useEffect(() => {
+    if (data) {
+      setTemplates(data);
+    }
+  }, [data]);
 
   const toggleTemplateExpansion = (templateId: number) => {
     if (expandedTemplate === templateId) {

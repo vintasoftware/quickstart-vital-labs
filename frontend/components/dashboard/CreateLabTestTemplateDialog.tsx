@@ -21,15 +21,40 @@ import {
 } from "@chakra-ui/react";
 import { fetcher } from "../../lib/client";
 import useSWR from "swr";
+import { useEffect, useState } from "react";
 
-export const CreateLabTestTemplateDialog = () => {
-  // Add useDisclosure hook to control the modal
+interface Marker {
+  id: number;
+  name: string;
+  description: string;
+}
+
+interface CreateLabTestTemplateDialogProps {
+  initialMarkers?: Marker[];
+}
+
+export const CreateLabTestTemplateDialog = ({ initialMarkers = [] }: CreateLabTestTemplateDialogProps) => {
+  const [availableMarkers, setAvailableMarkers] = useState<Marker[]>(initialMarkers);
+  const [selectedMarkers, setSelectedMarkers] = useState<Marker[]>([]);
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const { data } = useSWR("/tests/", fetcher);
+  const { data } = useSWR("/markers/", fetcher);
 
-  console.log(data);
+  useEffect(() => {
+    if (data) {
+      setAvailableMarkers(data.markers);
+    }
+  }, [data]);
 
-  const availableTests = data?.tests || [];
+  const handleMarkerToggle = (marker: Marker) => {
+    setSelectedMarkers(prev => {
+      const isSelected = prev.some(m => m.id === marker.id);
+      if (isSelected) {
+        return prev.filter(m => m.id !== marker.id);
+      } else {
+        return [...prev, marker];
+      }
+    });
+  };
   
   return (
     <Box>
@@ -62,10 +87,14 @@ export const CreateLabTestTemplateDialog = () => {
                 <Text mb={4}>Select tests to include in this template:</Text>
                 
                 <VStack align="stretch" spacing={2} maxH="300px" overflowY="auto">
-                  {availableTests.length > 0 ? (
-                    availableTests.map((test: any) => (
-                      <Checkbox key={test.id} value={test.id}>
-                        {test.name} - {test.description}
+                  {availableMarkers.length > 0 ? (
+                    availableMarkers.map((marker: Marker) => (
+                      <Checkbox 
+                        key={marker.id} 
+                        isChecked={selectedMarkers.some(m => m.id === marker.id)}
+                        onChange={() => handleMarkerToggle(marker)}
+                      >
+                        {marker.name} - {marker.description}
                       </Checkbox>
                     ))
                   ) : (
@@ -78,9 +107,20 @@ export const CreateLabTestTemplateDialog = () => {
               
               <Box borderWidth="1px" borderRadius="lg" p={4} mt={2}>
                 <Heading size="sm" mb={3}>Template Summary</Heading>
-                <Text fontSize="sm" color="gray.600">
-                  Select tests above to see a summary of your template
-                </Text>
+                {selectedMarkers.length > 0 ? (
+                  <VStack align="stretch" spacing={2}>
+                    <Text fontSize="sm" fontWeight="medium">Selected Tests ({selectedMarkers.length}):</Text>
+                    {selectedMarkers.map(marker => (
+                      <Text key={marker.id} fontSize="sm" color="gray.600">
+                        • {marker.name}
+                      </Text>
+                    ))}
+                  </VStack>
+                ) : (
+                  <Text fontSize="sm" color="gray.600">
+                    Select tests above to see a summary of your template
+                  </Text>
+                )}
               </Box>
             </VStack>
           </ModalBody>
