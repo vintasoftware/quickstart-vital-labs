@@ -101,3 +101,13 @@ def create_test(data: dict):
 @app.get("/markers/")
 def get_markers():
     return client.lab_tests.get_markers()
+
+
+@app.get("/orders/")
+def get_orders():
+    return client.lab_tests.get_orders()
+
+
+@app.post("/orders/")
+def create_order(data: dict):
+    return client.lab_tests.create_order(data)

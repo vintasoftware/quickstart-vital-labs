@@ -9,10 +9,10 @@ interface LabTest {
 }
 
 interface LabTestOrdersTableProps {
-  tests: LabTest[];
+  orders: LabOrder[];
 }
 
-export const LabTestOrdersTable = ({ tests }: LabTestOrdersTableProps) => {
+export const LabTestOrdersTable = ({ orders }: LabTestOrdersTableProps) => {
   return (
     <TableContainer>
       <Table variant="simple">
@@ -26,18 +26,18 @@ export const LabTestOrdersTable = ({ tests }: LabTestOrdersTableProps) => {
           </Tr>
         </Thead>
         <Tbody>
-          {tests.length > 0 ? (
-            tests.map((test: any, index: any) => (
+          {orders.length > 0 ? (
+            orders.map((order: any, index: any) => (
               <Tr key={index}>
-                <Td>{test.name}</Td>
-                <Td>{test.date}</Td>
-                <Td>{test.user}</Td>
-                <Td>{test.status}</Td>
+                <Td>{order.lab_test.name}</Td>
+                <Td>{order.created_at}</Td>
+                <Td>{order.patient_details.first_name} {order.patient_details.last_name}</Td>
+                <Td>{order.status}</Td>
               </Tr>
             ))
           ) : (
             <Tr>
-              <Td colSpan={4} textAlign="center">No lab tests available</Td>
+              <Td colSpan={4} textAlign="center">No lab orders available</Td>
             </Tr>
           )}
         </Tbody>

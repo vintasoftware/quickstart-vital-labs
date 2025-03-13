@@ -18,10 +18,23 @@ import { VStack,
 } from "@chakra-ui/react";
 import { fetcher } from "../../lib/client";
 import useSWR from "swr";
+
+// Add this interface
+interface LabTestTemplate {
+  id: number;
+  name: string;
+  description: string;
+  tests: Array<{
+    name: string;
+    description: string;
+  }>;
+}
+
 export const OrderTestDialog = () => {
   // Add useDisclosure hook to control the modal
   const { isOpen, onOpen, onClose } = useDisclosure();
   const { data } = useSWR("/users/", fetcher);
+  const { data: templates } = useSWR<LabTestTemplate[]>("/tests/", fetcher);
 
   const usersFiltered = data?.users ? data.users : [];
   
@@ -74,11 +87,15 @@ export const OrderTestDialog = () => {
               <FormControl isRequired>
                 <FormLabel>Lab Test Template</FormLabel>
                 <Select placeholder="Select lab test template">
-                  <option value="basic">Basic Health Panel</option>
-                  <option value="comprehensive">Comprehensive Metabolic Panel</option>
-                  <option value="cardiac">Cardiac Health Assessment</option>
-                  <option value="thyroid">Thyroid Function Panel</option>
-                  <option value="vitamin">Vitamin & Nutrition Panel</option>
+                  {templates ? (
+                    templates.map((template) => (
+                      <option key={template.id} value={template.id}>
+                        {template.name}
+                      </option>
+                    ))
+                  ) : (
+                    <option value="" disabled>Loading templates...</option>
+                  )}
                 </Select>
                 <FormHelperText>Select the lab test collection you want to order</FormHelperText>
               </FormControl>
