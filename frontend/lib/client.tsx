@@ -19,6 +19,15 @@ export const fetchSummaryData = (
     .then((res) => res.json())
     .then((data) => data[key]);
 
+export const postData = (url: string, data: any) =>
+  fetch(`${URL_PREFIX}${url}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  }).then((res) => res.json());
+
 export class Client {
   constructor() {}
 

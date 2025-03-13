@@ -4,6 +4,7 @@ from tracemalloc import start
 from typing import Optional
 from vital.client import Vital
 from vital.environment import VitalEnvironment
+from vital.types.lab_test_collection_method import LabTestCollectionMethod
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -22,9 +23,13 @@ elif VITAL_ENVIRONMENT == "production":
 
 client = Vital(api_key=VITAL_API_KEY, environment=vital_env)
 
-app.add_middleware(  # type: ignore
+app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://0.0.0.0:3000",
+        "http://frontend:3000",  # Docker service name if applicable
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -77,6 +82,20 @@ def get_users(user_id: str, start_date: str, end_date: str):
 @app.get("/tests/")
 def get_tests():
     return client.lab_tests.get()
+
+
+@app.post("/tests/")
+def create_test(data: dict):
+    name = data["name"]
+    description = data["description"]
+    # method = data["method"]
+    marker_ids = data["marker_ids"]
+    # method_mapping = {
+    #     "testkit": LabTestCollectionMethod.TESTKIT,
+    #     "walk_in_test": LabTestCollectionMethod.WALK_IN_TEST,
+    #     "at_home_phlebotomy": LabTestCollectionMethod.AT_HOME_PHLEBOTOMY,
+    # }
+    return client.lab_tests.create(name=name, description=description, method=LabTestCollectionMethod.TESTKIT, marker_ids=marker_ids)
 
 
 @app.get("/markers/")
