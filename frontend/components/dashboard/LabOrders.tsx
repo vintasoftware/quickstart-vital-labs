@@ -18,7 +18,7 @@ interface LabOrder {
 export const LabOrders = () => {
   const { data } = useSWR<LabOrder[]>("/orders/", fetcher);
 
-  console.log(data.orders);
+  const orders = data?.orders ? data.orders : [];
   
   return (
     <HStack width={"100%"} alignItems="stretch" height="100%">
@@ -27,7 +27,7 @@ export const LabOrders = () => {
                 <Box height="100%">
                     <Heading>Lab Test Orders</Heading>
                     <Box><OrderTestDialog /></Box>
-                    <LabTestOrdersTable orders={data.orders || []} />
+                    <LabTestOrdersTable orders={orders || []} />
                 </Box>
             </Card>
         </VStack>
