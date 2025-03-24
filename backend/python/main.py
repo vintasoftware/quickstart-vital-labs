@@ -88,14 +88,14 @@ def get_tests():
 def create_test(data: dict):
     name = data["name"]
     description = data["description"]
-    # method = data["method"]
+    method = data["method"]
     marker_ids = data["marker_ids"]
-    # method_mapping = {
-    #     "testkit": LabTestCollectionMethod.TESTKIT,
-    #     "walk_in_test": LabTestCollectionMethod.WALK_IN_TEST,
-    #     "at_home_phlebotomy": LabTestCollectionMethod.AT_HOME_PHLEBOTOMY,
-    # }
-    return client.lab_tests.create(name=name, description=description, method=LabTestCollectionMethod.TESTKIT, marker_ids=marker_ids)
+    method_mapping = {
+        "testkit": LabTestCollectionMethod.TESTKIT,
+        "walk_in_test": LabTestCollectionMethod.WALK_IN_TEST,
+        "at_home_phlebotomy": LabTestCollectionMethod.AT_HOME_PHLEBOTOMY,
+    }
+    return client.lab_tests.create(name=name, description=description, method=method_mapping[method], marker_ids=marker_ids)
 
 
 @app.get("/markers/")
@@ -106,6 +106,11 @@ def get_markers(lab_id: Optional[int] = None):
         return client.lab_tests.get_markers()
 
 
+@app.get("/tests/markers/{lab_test_id}/")
+def get_markers_for_lab_test(lab_test_id: str):
+    return client.lab_tests.get_markers_for_lab_test(lab_test_id=lab_test_id)
+
+
 @app.get("/orders/")
 def get_orders():
     return client.lab_tests.get_orders()
@@ -114,6 +119,7 @@ def get_orders():
 @app.post("/orders/")
 def create_order(data: dict):
     return client.lab_tests.create_order(data)
+
 
 @app.get("/labs/")
 def get_labs():

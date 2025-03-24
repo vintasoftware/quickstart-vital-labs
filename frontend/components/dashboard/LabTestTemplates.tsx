@@ -8,6 +8,7 @@ import useSWR from "swr";
 
 // Define the interface for a test within a template
 interface TemplateTest {
+  id: number;
   name: string;
   description: string;
 }
@@ -18,6 +19,18 @@ interface LabTestTemplate {
   name: string;
   description: string;
   tests: TemplateTest[];
+}
+
+interface Marker {
+  id: number;
+  name: string;
+  description: string;
+}
+
+interface Template {
+  id: number;
+  name: string;
+  description: string;
 }
 
 interface LabTestTemplatesProps {
@@ -73,32 +86,11 @@ export const LabTestTemplates = ({ initialTemplates = [] }: LabTestTemplatesProp
                     </Td>
                   </Tr>
                   {expandedTemplate === template.id && (
-                    <Tr>
+                    <Tr key={`${template.id}-markers`}>
                       <Td colSpan={3} p={0}>
                         <Box pl={8} pr={4} py={2} bg="gray.50">
-                          <Text fontWeight="medium" mb={2}>Included Tests:</Text>
-                          <Table size="sm" variant="simple">
-                            <Thead>
-                              <Tr>
-                                <Th>Test Name</Th>
-                                <Th>Description</Th>
-                              </Tr>
-                            </Thead>
-                            <Tbody>
-                              {template.tests && template.tests.length > 0 ? (
-                                template.tests.map((test: TemplateTest, idx: number) => (
-                                  <Tr key={idx}>
-                                    <Td>{test.name}</Td>
-                                    <Td>{test.description}</Td>
-                                  </Tr>
-                                ))
-                              ) : (
-                                <Tr>
-                                  <Td colSpan={2} textAlign="center">No tests included in this template</Td>
-                                </Tr>
-                              )}
-                            </Tbody>
-                          </Table>
+                          <Text fontWeight="medium" mb={2}>Included Markers:</Text>
+                          <MarkersList templateId={template.id} />
                         </Box>
                       </Td>
                     </Tr>
@@ -114,5 +106,27 @@ export const LabTestTemplates = ({ initialTemplates = [] }: LabTestTemplatesProp
         </Table>
       </TableContainer>
     </Card>
+  );
+};
+
+// Create a separate component for markers to handle the data fetching
+const MarkersList = ({ templateId }: { templateId: number }) => {
+  const { data: markerData } = useSWR(
+    `/tests/markers/${templateId}/`,
+    fetcher
+  );
+
+  if (!markerData) {
+    return <Text fontSize="sm" color="gray.500">Loading markers...</Text>;
+  }
+
+  return (
+    <VStack align="start" spacing={1}>
+      {markerData.markers?.map((marker: Marker) => (
+        <Text key={marker.id} fontSize="sm">
+          • {marker.name}
+        </Text>
+      ))}
+    </VStack>
   );
 }; 
