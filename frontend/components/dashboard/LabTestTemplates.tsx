@@ -2,6 +2,7 @@ import { VStack, Heading, Text, Box, Button, Table, TableContainer, Thead, Tr, T
 import { useState, useEffect } from "react";
 import { Card } from "../Card";
 import { CreateLabTestTemplateDialog } from "./CreateLabTestTemplateDialog";
+import { EditLabTestTemplateDialog } from "./EditLabTestTemplateDialog";
 import { fetcher } from "../../lib/client";
 import useSWR from "swr";
 
@@ -56,15 +57,19 @@ export const LabTestTemplates = ({ initialTemplates = [] }: LabTestTemplatesProp
             </Tr>
           </Thead>
           <Tbody>
-            {templates.length > 0 ? (
-              templates.map((template: any) => (
+            {templates?.length > 0 ? (
+              templates.map((template: LabTestTemplate) => (
                 <>
                   <Tr key={template.id} cursor="pointer" onClick={() => toggleTemplateExpansion(template.id)}>
-                    <Td fontWeight="bold">{template.name}</Td>
-                    <Td>{template.description}</Td>
-                    <Td>
-                      <Button size="sm" colorScheme="blue" mr={2}>Edit</Button>
-                      <Button size="sm" colorScheme="red">Delete</Button>
+                    <Td fontWeight="bold">{template?.name}</Td>
+                    <Td>{template?.description}</Td>
+                    <Td onClick={(e) => e.stopPropagation()}>
+                      <EditLabTestTemplateDialog 
+                        template={{
+                          ...template,
+                          tests: template?.tests || []  // Ensure tests is always an array
+                        }} 
+                      />
                     </Td>
                   </Tr>
                   {expandedTemplate === template.id && (
@@ -80,12 +85,18 @@ export const LabTestTemplates = ({ initialTemplates = [] }: LabTestTemplatesProp
                               </Tr>
                             </Thead>
                             <Tbody>
-                              {template.tests.map((test: any, idx: any) => (
-                                <Tr key={idx}>
-                                  <Td>{test.name}</Td>
-                                  <Td>{test.description}</Td>
+                              {template.tests && template.tests.length > 0 ? (
+                                template.tests.map((test: TemplateTest, idx: number) => (
+                                  <Tr key={idx}>
+                                    <Td>{test.name}</Td>
+                                    <Td>{test.description}</Td>
+                                  </Tr>
+                                ))
+                              ) : (
+                                <Tr>
+                                  <Td colSpan={2} textAlign="center">No tests included in this template</Td>
                                 </Tr>
-                              ))}
+                              )}
                             </Tbody>
                           </Table>
                         </Box>

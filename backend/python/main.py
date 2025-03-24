@@ -99,8 +99,11 @@ def create_test(data: dict):
 
 
 @app.get("/markers/")
-def get_markers():
-    return client.lab_tests.get_markers()
+def get_markers(lab_id: Optional[int] = None):
+    if lab_id:
+        return client.lab_tests.get_markers(lab_id=lab_id)
+    else:
+        return client.lab_tests.get_markers()
 
 
 @app.get("/orders/")
@@ -111,3 +114,7 @@ def get_orders():
 @app.post("/orders/")
 def create_order(data: dict):
     return client.lab_tests.create_order(data)
+
+@app.get("/labs/")
+def get_labs():
+    return client.lab_tests.get_labs()

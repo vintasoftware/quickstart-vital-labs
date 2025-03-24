@@ -30,6 +30,11 @@ interface Marker {
   description: string;
 }
 
+interface Lab {
+  id: number;
+  name: string;
+}
+
 interface CreateLabTestTemplateDialogProps {
   initialMarkers?: Marker[];
 }
@@ -39,6 +44,7 @@ interface TestFormData {
   description: string;
   method: string;
   marker_ids: number[];
+  lab_id?: number;
 }
 
 enum TestMethod {
@@ -50,20 +56,36 @@ enum TestMethod {
 export const CreateLabTestTemplateDialog = ({ initialMarkers = [] }: CreateLabTestTemplateDialogProps) => {
   const [availableMarkers, setAvailableMarkers] = useState<Marker[]>(initialMarkers);
   const [selectedMarkers, setSelectedMarkers] = useState<Marker[]>([]);
+  const [labs, setLabs] = useState<Lab[]>([]);
   const [formData, setFormData] = useState<TestFormData>({
     name: '',
     description: '',
     method: '',
     marker_ids: [],
+    lab_id: undefined,
   });
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const { data } = useSWR("/markers/", fetcher);
+  const { data: markersData } = useSWR(
+    formData.lab_id ? `/markers/?lab_id=${formData.lab_id}` : null,
+    fetcher
+  );
+  const { data: labsData } = useSWR("/labs/", fetcher);
 
   useEffect(() => {
-    if (data) {
-      setAvailableMarkers(data.markers);
+    if (labsData) {
+      setLabs(labsData);
     }
-  }, [data]);
+  }, [labsData]);
+
+  useEffect(() => {
+    if (markersData?.markers) {
+      setAvailableMarkers(markersData.markers);
+    } else if (!formData.lab_id) {
+      // Clear markers when no lab is selected
+      setAvailableMarkers([]);
+      setSelectedMarkers([]);
+    }
+  }, [markersData, formData.lab_id]);
 
   const handleMarkerToggle = (marker: Marker) => {
     const isSelected = selectedMarkers.some(m => m.id === marker.id);
@@ -85,13 +107,25 @@ export const CreateLabTestTemplateDialog = ({ initialMarkers = [] }: CreateLabTe
   };
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    
+    // Clear markers and selected markers when lab changes
+    if (name === 'lab_id') {
+      setAvailableMarkers([]);
+      setSelectedMarkers([]);
+      setFormData(prev => ({
+        ...prev,
+        [name]: value,
+        marker_ids: [] // Reset marker_ids when lab changes
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
   };
 
   const handleSubmit = async () => {
@@ -104,6 +138,7 @@ export const CreateLabTestTemplateDialog = ({ initialMarkers = [] }: CreateLabTe
         description: '',
         method: '',
         marker_ids: [],
+        lab_id: undefined,
       });
       setSelectedMarkers([]);
       onClose();
@@ -125,8 +160,6 @@ export const CreateLabTestTemplateDialog = ({ initialMarkers = [] }: CreateLabTe
           
           <ModalBody>
             <VStack spacing={6} align="stretch">
-              <Text fontWeight="medium">Create a new lab test template by selecting tests to include:</Text>
-              
               <FormControl isRequired>
                 <FormLabel>Test Name</FormLabel>
                 <Input 
@@ -166,47 +199,75 @@ export const CreateLabTestTemplateDialog = ({ initialMarkers = [] }: CreateLabTe
                 </Select>
                 <FormHelperText>Select the method for this test</FormHelperText>
               </FormControl>
+
+              <FormControl isRequired>
+                <FormLabel>Select Lab</FormLabel>
+                <Select
+                  name="lab_id"
+                  value={formData.lab_id || ''}
+                  onChange={handleInputChange}
+                  placeholder="Select a lab to view available biomarkers"
+                  required
+                >
+                  {labs.map((lab) => (
+                    <option key={lab.id} value={lab.id}>
+                      {lab.name}
+                    </option>
+                  ))}
+                </Select>
+                <FormHelperText>Choose a lab to see available biomarkers</FormHelperText>
+              </FormControl>
               
-              <Box borderWidth="1px" borderRadius="lg" p={4}>
-                <Heading size="sm" mb={3}>Available Biomarkers</Heading>
-                <Text mb={4}>Select biomarkers to include in this template:</Text>
-                
-                <VStack align="stretch" spacing={2} maxH="300px" overflowY="auto">
-                  {availableMarkers.length > 0 ? (
-                    availableMarkers.map((marker: Marker) => (
-                      <Checkbox 
-                        key={marker.id} 
-                        isChecked={selectedMarkers.some(m => m.id === marker.id)}
-                        onChange={() => handleMarkerToggle(marker)}
-                      >
-                        {marker.name} - {marker.description}
-                      </Checkbox>
-                    ))
-                  ) : (
-                    <Text fontSize="sm" color="gray.600">
-                      Loading available biomarkers...
-                    </Text>
-                  )}
-                </VStack>
-              </Box>
-              
-              <Box borderWidth="1px" borderRadius="lg" p={4} mt={2}>
-                <Heading size="sm" mb={3}>Template Summary</Heading>
-                {selectedMarkers.length > 0 ? (
-                  <VStack align="stretch" spacing={2}>
-                    <Text fontSize="sm" fontWeight="medium">Selected Tests ({selectedMarkers.length}):</Text>
-                    {selectedMarkers.map((marker: Marker) => (
-                      <Text key={marker.id} fontSize="sm" color="gray.600">
-                        • {marker.name}
+              {formData.lab_id ? (
+                <>
+                  <Box borderWidth="1px" borderRadius="lg" p={4}>
+                    <Heading size="sm" mb={3}>Available Biomarkers</Heading>
+                    <Text mb={4}>Select biomarkers to include in this template:</Text>
+                    
+                    <VStack align="stretch" spacing={2} maxH="300px" overflowY="auto">
+                      {availableMarkers.length > 0 ? (
+                        availableMarkers.map((marker: Marker) => (
+                          <Checkbox 
+                            key={marker.id} 
+                            isChecked={selectedMarkers.some(m => m.id === marker.id)}
+                            onChange={() => handleMarkerToggle(marker)}
+                          >
+                            {marker.name} - {marker.description}
+                          </Checkbox>
+                        ))
+                      ) : (
+                        <Text fontSize="sm" color="gray.600">
+                          Loading available biomarkers...
+                        </Text>
+                      )}
+                    </VStack>
+                  </Box>
+                  
+                  <Box borderWidth="1px" borderRadius="lg" p={4} mt={2}>
+                    <Heading size="sm" mb={3}>Template Summary</Heading>
+                    {selectedMarkers.length > 0 ? (
+                      <VStack align="stretch" spacing={2}>
+                        <Text fontSize="sm" fontWeight="medium">Selected Tests ({selectedMarkers.length}):</Text>
+                        {selectedMarkers.map((marker: Marker) => (
+                          <Text key={marker.id} fontSize="sm" color="gray.600">
+                            • {marker.name}
+                          </Text>
+                        ))}
+                      </VStack>
+                    ) : (
+                      <Text fontSize="sm" color="gray.600">
+                        Select tests above to see a summary of your template
                       </Text>
-                    ))}
-                  </VStack>
-                ) : (
-                  <Text fontSize="sm" color="gray.600">
-                    Select tests above to see a summary of your template
+                    )}
+                  </Box>
+                </>
+              ) : (
+                <Box p={4} borderWidth="1px" borderRadius="lg" bg="gray.50">
+                  <Text color="gray.600" textAlign="center">
+                    Please select a lab to view and select available biomarkers
                   </Text>
-                )}
-              </Box>
+                </Box>
+              )}
             </VStack>
           </ModalBody>
 
@@ -217,7 +278,7 @@ export const CreateLabTestTemplateDialog = ({ initialMarkers = [] }: CreateLabTe
             <Button 
               colorScheme="blue"
               onClick={handleSubmit}
-              isDisabled={!formData.name || !formData.description || !formData.method || selectedMarkers.length === 0}
+              isDisabled={!formData.lab_id || !formData.name || !formData.description || !formData.method || selectedMarkers.length === 0}
             >
               Create Test
             </Button>
