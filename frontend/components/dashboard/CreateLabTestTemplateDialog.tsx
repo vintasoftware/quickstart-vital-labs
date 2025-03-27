@@ -18,7 +18,8 @@ import {
     Input,
     Textarea,
     Checkbox,
-    Select
+    Select,
+    useToast,
 } from "@chakra-ui/react";
 import { fetcher, postData } from "../../lib/client";
 import useSWR from "swr";
@@ -42,7 +43,6 @@ interface CreateLabTestTemplateDialogProps {
 
 interface TestFormData {
   name: string;
-  description: string;
   method: string;
   marker_ids: number[];
   lab_id?: number;
@@ -60,7 +60,6 @@ export const CreateLabTestTemplateDialog = ({ initialMarkers = [] }: CreateLabTe
   const [labs, setLabs] = useState<Lab[]>([]);
   const [formData, setFormData] = useState<TestFormData>({
     name: '',
-    description: '',
     method: '',
     marker_ids: [],
     lab_id: undefined,
@@ -71,6 +70,7 @@ export const CreateLabTestTemplateDialog = ({ initialMarkers = [] }: CreateLabTe
     formData.lab_id ? `/markers/?lab_id=${formData.lab_id}` : null,
     fetcher
   );
+  const toast = useToast();
 
   // Get the selected lab's collection methods
   const selectedLab = labs.find((lab: Lab) => lab.id === Number(formData.lab_id));
@@ -140,16 +140,29 @@ export const CreateLabTestTemplateDialog = ({ initialMarkers = [] }: CreateLabTe
       // Reset form and close modal on success
       setFormData({
         name: '',
-        description: '',
         method: '',
         marker_ids: [],
         lab_id: undefined,
       });
       setSelectedMarkers([]);
       onClose();
+      
+      // Success toast
+      toast({
+        title: "Test template created",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
     } catch (error) {
-      console.error('Error creating test:', error);
-      // You might want to add error handling UI here
+      // Error toast
+      toast({
+        title: "Error creating test template",
+        description: error instanceof Error ? error.message : "An unexpected error occurred",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
     }
   };
 
@@ -177,18 +190,6 @@ export const CreateLabTestTemplateDialog = ({ initialMarkers = [] }: CreateLabTe
                 <FormHelperText>Give your test a descriptive name</FormHelperText>
               </FormControl>
               
-              <FormControl isRequired>
-                <FormLabel>Test Description</FormLabel>
-                <Textarea 
-                  name="description"
-                  value={formData.description}
-                  onChange={handleInputChange}
-                  placeholder="Enter description"
-                  required
-                />
-                <FormHelperText>Provide details about this test</FormHelperText>
-              </FormControl>
-
               <FormControl isRequired>
                 <FormLabel>Select Lab</FormLabel>
                 <Select
@@ -256,7 +257,7 @@ export const CreateLabTestTemplateDialog = ({ initialMarkers = [] }: CreateLabTe
                     <Heading size="sm" mb={3}>Template Summary</Heading>
                     {selectedMarkers.length > 0 ? (
                       <VStack align="stretch" spacing={2}>
-                        <Text fontSize="sm" fontWeight="medium">Selected Tests ({selectedMarkers.length}):</Text>
+                        <Text fontSize="sm" fontWeight="medium">Selected Markers ({selectedMarkers.length}):</Text>
                         {selectedMarkers.map((marker: Marker) => (
                           <Text key={marker.id} fontSize="sm" color="gray.600">
                             • {marker.name}
@@ -265,7 +266,7 @@ export const CreateLabTestTemplateDialog = ({ initialMarkers = [] }: CreateLabTe
                       </VStack>
                     ) : (
                       <Text fontSize="sm" color="gray.600">
-                        Select tests above to see a summary of your template
+                        Select markers above to see a summary of your template
                       </Text>
                     )}
                   </Box>
@@ -289,7 +290,7 @@ export const CreateLabTestTemplateDialog = ({ initialMarkers = [] }: CreateLabTe
             <Button 
               colorScheme="blue"
               onClick={handleSubmit}
-              isDisabled={!formData.lab_id || !formData.name || !formData.description || !formData.method || selectedMarkers.length === 0}
+              isDisabled={!formData.lab_id || !formData.name || !formData.method || selectedMarkers.length === 0}
             >
               Create Test
             </Button>
