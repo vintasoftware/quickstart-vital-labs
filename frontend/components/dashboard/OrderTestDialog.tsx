@@ -20,7 +20,8 @@ import { VStack,
     RadioGroup,
     Radio,
     Stack,
-    useToast
+    useToast,
+    Checkbox
 } from "@chakra-ui/react";
 import { fetcher } from "../../lib/client";
 import useSWR from "swr";
@@ -36,6 +37,7 @@ interface LabTestTemplate {
     name: string;
     description: string;
   }>;
+  collection_methods: string[];
 }
 
 interface PatientForm {
@@ -50,6 +52,7 @@ interface PatientForm {
   state: string;
   zip: string;
   country: string;
+  hipaa_authorized: boolean;
 }
 
 export const OrderTestDialog = () => {
@@ -77,6 +80,7 @@ export const OrderTestDialog = () => {
     state: "",
     zip: "",
     country: "USA",
+    hipaa_authorized: false,
   });
 
   const handleFormChange = (field: keyof PatientForm, value: string) => {
@@ -191,10 +195,14 @@ export const OrderTestDialog = () => {
       'state': patientForm.state,
       'zip': patientForm.zip,
       'country': patientForm.country,
+      'hipaa_authorized': patientForm.hipaa_authorized,
     };
 
-    return Object.values(requiredFields).every(field => field && field.trim() !== '');
+    return Object.values(requiredFields).every(field => field && field.toString().trim() !== '');
   };
+
+  // Get the selected template's collection methods
+  const selectedTemplate = templates?.find(t => t.id === selectedTest);
 
   return (
     <Box>
@@ -227,35 +235,14 @@ export const OrderTestDialog = () => {
               </FormControl>
               
               <FormControl isRequired>
-                <FormLabel>Payor</FormLabel>
-                <Select placeholder="Select payor">
-                  <option value="self">Self</option>
-                  <option value="relative">Relative</option>
-                  <option value="other">Other</option>
-                </Select>
-                <FormHelperText>Select who will be paying for the test</FormHelperText>
-              </FormControl>
-
-              <FormControl isRequired>
-                <FormLabel>Collection Method</FormLabel>
-                <Select 
-                  placeholder="Select Collection Method"
-                  value={collectionMethod}
-                  onChange={(e) => setCollectionMethod(e.target.value)}
-                >
-                  <option value="at-home">At-Home</option>
-                  <option value="walk-in">Walk-In</option>
-                  <option value="self-test-kit">Self-test kit</option>
-                </Select>
-                <FormHelperText>Select collection method for the test</FormHelperText>
-              </FormControl>
-              
-              <FormControl isRequired>
                 <FormLabel>Lab Test Template</FormLabel>
                 <Select 
                   placeholder="Select lab test template"
                   value={selectedTest}
-                  onChange={(e) => setSelectedTest(e.target.value)}
+                  onChange={(e) => {
+                    setSelectedTest(e.target.value);
+                    setCollectionMethod(''); // Reset collection method when template changes
+                  }}
                 >
                   {templates ? (
                     templates.map((template) => (
@@ -269,6 +256,32 @@ export const OrderTestDialog = () => {
                 </Select>
                 <FormHelperText>Select the lab test collection you want to order</FormHelperText>
               </FormControl>
+
+              {selectedTemplate && (
+                <FormControl isRequired>
+                  <FormLabel>Collection Method</FormLabel>
+                  <Select 
+                    placeholder="Select Collection Method"
+                    value={collectionMethod}
+                    onChange={(e) => setCollectionMethod(e.target.value)}
+                    isDisabled={!selectedTemplate}
+                  >
+                    {selectedTemplate.lab.collection_methods.map((method) => (
+                      <option key={method} value={method}>
+                        {method === "testkit" ? "Test Kit" :
+                         method === "walk_in_test" ? "Walk-in Test" :
+                         method === "at_home_phlebotomy" ? "At-home Phlebotomy" :
+                         method}
+                      </option>
+                    ))}
+                  </Select>
+                  <FormHelperText>
+                    {selectedTemplate ? 
+                      "Select the collection method for this test" : 
+                      "Please select a lab test template first"}
+                  </FormHelperText>
+                </FormControl>
+              )}
               
               <Box borderWidth="1px" borderRadius="lg" p={4} mt={2}>
                 <Heading size="sm" mb={3}>Selected Test Collection Details</Heading>
@@ -334,6 +347,20 @@ export const OrderTestDialog = () => {
                     value={patientForm.email}
                     onChange={(e) => handleFormChange('email', e.target.value)}
                   />
+                </FormControl>
+
+                <FormControl isRequired gridColumn="span 2">
+                  <Checkbox
+                    isChecked={patientForm.hipaa_authorized}
+                    onChange={(e) => handleFormChange('hipaa_authorized', e.target.checked)}
+                    size="md"
+                    colorScheme="blue"
+                  >
+                    User has given HIPAA authorization for Junction
+                  </Checkbox>
+                  <FormHelperText>
+                    Required for processing lab test orders
+                  </FormHelperText>
                 </FormControl>
               </SimpleGrid>
 
