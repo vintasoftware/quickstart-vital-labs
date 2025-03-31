@@ -23,7 +23,7 @@ import { VStack,
     useToast,
     Checkbox
 } from "@chakra-ui/react";
-import { fetcher } from "../../lib/client";
+import { fetcher, postData } from "../../lib/client";
 import useSWR from "swr";
 import { useState } from "react";
 import { US_STATES } from '../../constants/location';
@@ -64,7 +64,6 @@ export const OrderTestDialog = () => {
 
   const [selectedUser, setSelectedUser] = useState("");
   const [selectedTest, setSelectedTest] = useState("");
-  const [collectionMethod, setCollectionMethod] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Add form state
@@ -94,6 +93,11 @@ export const OrderTestDialog = () => {
     try {
       setIsSubmitting(true);
       
+      const selectedTemplate = templates?.find(t => t.id === selectedTest);
+      if (!selectedTemplate) {
+        throw new Error("Selected test template not found");
+      }
+
       const orderData: OrderData = {
         user_id: selectedUser,
         patient_details: {
@@ -112,16 +116,10 @@ export const OrderTestDialog = () => {
           country: patientForm.country,
         },
         lab_test_id: selectedTest,
-        collection_method: collectionMethod,
+        collection_method: selectedTemplate.method,
       };
 
-      const response = await fetch("/orders/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(orderData),
-      });
+      const response = await postData("/orders/", orderData);
 
       if (!response.ok) {
         let errorMessage = 'Failed to create order';
@@ -176,12 +174,10 @@ export const OrderTestDialog = () => {
   
   // Add this function to check if all required fields are filled
   const isFormValid = () => {
-    // Check if all required fields are filled
     const requiredFields = {
       // Form selections
       selectedUser,
       selectedTest,
-      collectionMethod,
       // Patient details
       'first_name': patientForm.first_name,
       'last_name': patientForm.last_name,
@@ -241,7 +237,6 @@ export const OrderTestDialog = () => {
                   value={selectedTest}
                   onChange={(e) => {
                     setSelectedTest(e.target.value);
-                    setCollectionMethod(''); // Reset collection method when template changes
                   }}
                 >
                   {templates ? (
@@ -256,39 +251,6 @@ export const OrderTestDialog = () => {
                 </Select>
                 <FormHelperText>Select the lab test collection you want to order</FormHelperText>
               </FormControl>
-
-              {selectedTemplate && (
-                <FormControl isRequired>
-                  <FormLabel>Collection Method</FormLabel>
-                  <Select 
-                    placeholder="Select Collection Method"
-                    value={collectionMethod}
-                    onChange={(e) => setCollectionMethod(e.target.value)}
-                    isDisabled={!selectedTemplate}
-                  >
-                    {selectedTemplate.lab.collection_methods.map((method) => (
-                      <option key={method} value={method}>
-                        {method === "testkit" ? "Test Kit" :
-                         method === "walk_in_test" ? "Walk-in Test" :
-                         method === "at_home_phlebotomy" ? "At-home Phlebotomy" :
-                         method}
-                      </option>
-                    ))}
-                  </Select>
-                  <FormHelperText>
-                    {selectedTemplate ? 
-                      "Select the collection method for this test" : 
-                      "Please select a lab test template first"}
-                  </FormHelperText>
-                </FormControl>
-              )}
-              
-              <Box borderWidth="1px" borderRadius="lg" p={4} mt={2}>
-                <Heading size="sm" mb={3}>Selected Test Collection Details</Heading>
-                <Text fontSize="sm" color="gray.600">
-                  Please select a lab test collection to see details
-                </Text>
-              </Box>
 
               <Heading size="md">Patient Details</Heading>
               <SimpleGrid columns={2} spacing={4}>

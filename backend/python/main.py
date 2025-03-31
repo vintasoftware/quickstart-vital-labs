@@ -118,7 +118,13 @@ def get_orders():
 
 @app.post("/orders/")
 def create_order(data: dict):
-    return client.lab_tests.create_order(data)
+    return client.lab_tests.create_order(
+        user_id=data["user_id"],
+        patient_details=data["patient_details"],
+        patient_address=data["patient_address"],
+        lab_test_id=data["lab_test_id"],
+        collection_method=data["collection_method"]
+    )
 
 
 @app.get("/labs/")
