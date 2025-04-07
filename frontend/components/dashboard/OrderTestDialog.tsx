@@ -20,10 +20,11 @@ import { VStack,
     RadioGroup,
     Radio,
     Stack,
-    useToast
+    useToast,
+    Checkbox
 } from "@chakra-ui/react";
-import { fetcher } from "../../lib/client";
-import useSWR from "swr";
+import { fetcher, postData } from "../../lib/client";
+import useSWR, { mutate } from "swr";
 import { useState } from "react";
 import { US_STATES } from '../../constants/location';
 
@@ -36,6 +37,7 @@ interface LabTestTemplate {
     name: string;
     description: string;
   }>;
+  method: string;
 }
 
 interface PatientForm {
@@ -50,6 +52,28 @@ interface PatientForm {
   state: string;
   zip: string;
   country: string;
+  hipaa_authorized: boolean;
+}
+
+interface OrderData {
+  user_id: string;
+  patient_details: {
+    first_name: string;
+    last_name: string;
+    dob: string;
+    gender: string;
+    phone_number: string;
+    email: string;
+  };
+  patient_address: {
+    first_line: string;
+    city: string;
+    state: string;
+    zip: string;
+    country: string;
+  };
+  lab_test_id: string;
+  collection_method: string;
 }
 
 export const OrderTestDialog = () => {
@@ -61,7 +85,6 @@ export const OrderTestDialog = () => {
 
   const [selectedUser, setSelectedUser] = useState("");
   const [selectedTest, setSelectedTest] = useState("");
-  const [collectionMethod, setCollectionMethod] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Add form state
@@ -77,6 +100,7 @@ export const OrderTestDialog = () => {
     state: "",
     zip: "",
     country: "USA",
+    hipaa_authorized: false,
   });
 
   const handleFormChange = (field: keyof PatientForm, value: string) => {
@@ -90,6 +114,11 @@ export const OrderTestDialog = () => {
     try {
       setIsSubmitting(true);
       
+      const selectedTemplate = templates?.find(t => t.id === selectedTest);
+      if (!selectedTemplate) {
+        throw new Error("Selected test template not found");
+      }
+
       const orderData: OrderData = {
         user_id: selectedUser,
         patient_details: {
@@ -108,40 +137,30 @@ export const OrderTestDialog = () => {
           country: patientForm.country,
         },
         lab_test_id: selectedTest,
-        collection_method: collectionMethod,
+        collection_method: selectedTemplate.method,
       };
 
-      const response = await fetch("/orders/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(orderData),
+      await postData("/orders/", orderData);
+      
+      // Reset form and close modal on success
+      setPatientForm({
+        first_name: "",
+        last_name: "",
+        dob: "",
+        gender: "female",
+        phone_number: "",
+        email: "",
+        address_line: "",
+        city: "",
+        state: "",
+        zip: "",
+        country: "USA",
+        hipaa_authorized: false,
       });
-
-      if (!response.ok) {
-        let errorMessage = 'Failed to create order';
-        
-        // Try to get detailed error message from response
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData.message || errorMessage;
-        } catch (e) {
-          // If we can't parse the error response, use status text
-          errorMessage = response.statusText || errorMessage;
-        }
-
-        // Handle different types of errors
-        if (response.status === 400) {
-          throw new Error(`Invalid request: ${errorMessage}`);
-        } else if (response.status === 500) {
-          throw new Error(`Server error: ${errorMessage}`);
-        } else {
-          throw new Error(errorMessage);
-        }
-      }
-
-      // Show success toast
+      setSelectedUser("");
+      setSelectedTest("");
+      
+      // Success toast
       toast({
         title: "Order created",
         description: "Your lab test order has been successfully created",
@@ -150,11 +169,14 @@ export const OrderTestDialog = () => {
         isClosable: true,
       });
 
+      // Add these lines to refresh the orders list
+      await mutate("/orders/");
       onClose();
+      
     } catch (error) {
       console.error("Error creating order:", error);
       
-      // Show error toast
+      // Error toast
       toast({
         title: "Error creating order",
         description: error instanceof Error ? error.message : "An unexpected error occurred",
@@ -172,12 +194,10 @@ export const OrderTestDialog = () => {
   
   // Add this function to check if all required fields are filled
   const isFormValid = () => {
-    // Check if all required fields are filled
     const requiredFields = {
       // Form selections
       selectedUser,
       selectedTest,
-      collectionMethod,
       // Patient details
       'first_name': patientForm.first_name,
       'last_name': patientForm.last_name,
@@ -191,10 +211,14 @@ export const OrderTestDialog = () => {
       'state': patientForm.state,
       'zip': patientForm.zip,
       'country': patientForm.country,
+      'hipaa_authorized': patientForm.hipaa_authorized,
     };
 
-    return Object.values(requiredFields).every(field => field && field.trim() !== '');
+    return Object.values(requiredFields).every(field => field && field.toString().trim() !== '');
   };
+
+  // Get the selected template's collection methods
+  const selectedTemplate = templates?.find(t => t.id === selectedTest);
 
   return (
     <Box>
@@ -227,35 +251,13 @@ export const OrderTestDialog = () => {
               </FormControl>
               
               <FormControl isRequired>
-                <FormLabel>Payor</FormLabel>
-                <Select placeholder="Select payor">
-                  <option value="self">Self</option>
-                  <option value="relative">Relative</option>
-                  <option value="other">Other</option>
-                </Select>
-                <FormHelperText>Select who will be paying for the test</FormHelperText>
-              </FormControl>
-
-              <FormControl isRequired>
-                <FormLabel>Collection Method</FormLabel>
-                <Select 
-                  placeholder="Select Collection Method"
-                  value={collectionMethod}
-                  onChange={(e) => setCollectionMethod(e.target.value)}
-                >
-                  <option value="at-home">At-Home</option>
-                  <option value="walk-in">Walk-In</option>
-                  <option value="self-test-kit">Self-test kit</option>
-                </Select>
-                <FormHelperText>Select collection method for the test</FormHelperText>
-              </FormControl>
-              
-              <FormControl isRequired>
                 <FormLabel>Lab Test Template</FormLabel>
                 <Select 
                   placeholder="Select lab test template"
                   value={selectedTest}
-                  onChange={(e) => setSelectedTest(e.target.value)}
+                  onChange={(e) => {
+                    setSelectedTest(e.target.value);
+                  }}
                 >
                   {templates ? (
                     templates.map((template) => (
@@ -269,13 +271,6 @@ export const OrderTestDialog = () => {
                 </Select>
                 <FormHelperText>Select the lab test collection you want to order</FormHelperText>
               </FormControl>
-              
-              <Box borderWidth="1px" borderRadius="lg" p={4} mt={2}>
-                <Heading size="sm" mb={3}>Selected Test Collection Details</Heading>
-                <Text fontSize="sm" color="gray.600">
-                  Please select a lab test collection to see details
-                </Text>
-              </Box>
 
               <Heading size="md">Patient Details</Heading>
               <SimpleGrid columns={2} spacing={4}>
@@ -334,6 +329,20 @@ export const OrderTestDialog = () => {
                     value={patientForm.email}
                     onChange={(e) => handleFormChange('email', e.target.value)}
                   />
+                </FormControl>
+
+                <FormControl isRequired gridColumn="span 2">
+                  <Checkbox
+                    isChecked={patientForm.hipaa_authorized}
+                    onChange={(e) => handleFormChange('hipaa_authorized', e.target.checked)}
+                    size="md"
+                    colorScheme="blue"
+                  >
+                    User has given HIPAA authorization for Junction
+                  </Checkbox>
+                  <FormHelperText>
+                    Required for processing lab test orders
+                  </FormHelperText>
                 </FormControl>
               </SimpleGrid>
 

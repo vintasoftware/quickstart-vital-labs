@@ -22,7 +22,7 @@ import {
     useToast,
 } from "@chakra-ui/react";
 import { fetcher, postData } from "../../lib/client";
-import useSWR from "swr";
+import useSWR, { mutate } from "swr";
 import { useEffect, useState } from "react";
 
 interface Marker {
@@ -137,7 +137,7 @@ export const CreateLabTestTemplateDialog = ({ initialMarkers = [] }: CreateLabTe
     try {
       await postData('/tests/', formData);
       
-      // Reset form and close modal on success
+      // Reset form
       setFormData({
         name: '',
         method: '',
@@ -145,7 +145,6 @@ export const CreateLabTestTemplateDialog = ({ initialMarkers = [] }: CreateLabTe
         lab_id: undefined,
       });
       setSelectedMarkers([]);
-      onClose();
       
       // Success toast
       toast({
@@ -154,6 +153,11 @@ export const CreateLabTestTemplateDialog = ({ initialMarkers = [] }: CreateLabTe
         duration: 3000,
         isClosable: true,
       });
+
+      // Add these lines to refresh the templates list
+      await mutate("/tests/");
+      onClose();
+      
     } catch (error) {
       // Error toast
       toast({
