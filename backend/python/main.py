@@ -87,7 +87,6 @@ def get_tests():
 @app.post("/tests/")
 def create_test(data: dict):
     name = data["name"]
-    description = data["description"]
     method = data["method"]
     marker_ids = data["marker_ids"]
     method_mapping = {
@@ -95,7 +94,7 @@ def create_test(data: dict):
         "walk_in_test": LabTestCollectionMethod.WALK_IN_TEST,
         "at_home_phlebotomy": LabTestCollectionMethod.AT_HOME_PHLEBOTOMY,
     }
-    return client.lab_tests.create(name=name, description=description, method=method_mapping[method], marker_ids=marker_ids)
+    return client.lab_tests.create(name=name, description='', method=method_mapping[method], marker_ids=marker_ids)
 
 
 @app.get("/markers/")
@@ -122,7 +121,7 @@ def create_order(data: dict):
         user_id=data["user_id"],
         patient_details=data["patient_details"],
         patient_address=data["patient_address"],
-        lab_test_id=data["lab_test_id"],
+        order_set={"lab_test_ids": [data["lab_test_id"]]},
         collection_method=data["collection_method"]
     )
 

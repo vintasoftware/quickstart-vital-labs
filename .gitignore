@@ -5,3 +5,4 @@ __pycache__
 .next
 .env.local
 /**/*.env.local
+test_data.txt

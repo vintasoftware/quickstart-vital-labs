@@ -24,7 +24,7 @@ import { VStack,
     Checkbox
 } from "@chakra-ui/react";
 import { fetcher, postData } from "../../lib/client";
-import useSWR from "swr";
+import useSWR, { mutate } from "swr";
 import { useState } from "react";
 import { US_STATES } from '../../constants/location';
 
@@ -38,6 +38,7 @@ interface LabTestTemplate {
     description: string;
   }>;
   collection_methods: string[];
+  method: string;
 }
 
 interface PatientForm {
@@ -53,6 +54,27 @@ interface PatientForm {
   zip: string;
   country: string;
   hipaa_authorized: boolean;
+}
+
+interface OrderData {
+  user_id: string;
+  patient_details: {
+    first_name: string;
+    last_name: string;
+    dob: string;
+    gender: string;
+    phone_number: string;
+    email: string;
+  };
+  patient_address: {
+    first_line: string;
+    city: string;
+    state: string;
+    zip: string;
+    country: string;
+  };
+  lab_test_id: string;
+  collection_method: string;
 }
 
 export const OrderTestDialog = () => {
@@ -119,31 +141,27 @@ export const OrderTestDialog = () => {
         collection_method: selectedTemplate.method,
       };
 
-      const response = await postData("/orders/", orderData);
-
-      if (!response.ok) {
-        let errorMessage = 'Failed to create order';
-        
-        // Try to get detailed error message from response
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData.message || errorMessage;
-        } catch (e) {
-          // If we can't parse the error response, use status text
-          errorMessage = response.statusText || errorMessage;
-        }
-
-        // Handle different types of errors
-        if (response.status === 400) {
-          throw new Error(`Invalid request: ${errorMessage}`);
-        } else if (response.status === 500) {
-          throw new Error(`Server error: ${errorMessage}`);
-        } else {
-          throw new Error(errorMessage);
-        }
-      }
-
-      // Show success toast
+      await postData("/orders/", orderData);
+      
+      // Reset form and close modal on success
+      setPatientForm({
+        first_name: "",
+        last_name: "",
+        dob: "",
+        gender: "female",
+        phone_number: "",
+        email: "",
+        address_line: "",
+        city: "",
+        state: "",
+        zip: "",
+        country: "USA",
+        hipaa_authorized: false,
+      });
+      setSelectedUser("");
+      setSelectedTest("");
+      
+      // Success toast
       toast({
         title: "Order created",
         description: "Your lab test order has been successfully created",
@@ -152,11 +170,14 @@ export const OrderTestDialog = () => {
         isClosable: true,
       });
 
+      // Add these lines to refresh the orders list
+      await mutate("/orders/");
       onClose();
+      
     } catch (error) {
       console.error("Error creating order:", error);
       
-      // Show error toast
+      // Error toast
       toast({
         title: "Error creating order",
         description: error instanceof Error ? error.message : "An unexpected error occurred",
