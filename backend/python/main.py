@@ -126,6 +126,11 @@ def create_order(data: dict):
     )
 
 
+@app.post("/orders/{order_id}/cancel/")
+def cancel_order(order_id: str):
+    return client.lab_tests.cancel_order(order_id=order_id)
+
+
 @app.get("/labs/")
 def get_labs():
     return client.lab_tests.get_labs()
