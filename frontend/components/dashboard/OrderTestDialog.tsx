@@ -37,7 +37,6 @@ interface LabTestTemplate {
     name: string;
     description: string;
   }>;
-  collection_methods: string[];
   method: string;
 }
 
