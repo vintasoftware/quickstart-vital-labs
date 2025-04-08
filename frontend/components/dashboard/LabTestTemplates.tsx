@@ -1,4 +1,4 @@
-import { VStack, Heading, Text, Box, Button, Table, TableContainer, Thead, Tr, Th, Tbody, Td } from "@chakra-ui/react";
+import { VStack, Heading, Text, Box, Table, TableContainer, Thead, Tr, Th, Tbody, Td } from "@chakra-ui/react";
 import { useState, useEffect } from "react";
 import { Card } from "../Card";
 import { CreateLabTestTemplateDialog } from "./CreateLabTestTemplateDialog";

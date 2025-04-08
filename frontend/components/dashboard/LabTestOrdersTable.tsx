@@ -1,26 +1,35 @@
-import { TableContainer, Table, TableCaption, Thead, Tr, Th, Tbody, Td, Button, useToast, useDisclosure } from "@chakra-ui/react";
-import { postData } from "../../lib/client";
+import { TableContainer, Table, Thead, Tr, Th, Tbody, Td, Button, useToast } from "@chakra-ui/react";
+import { Card } from "../Card";
+import { postData, fetcher } from "../../lib/client";
 import { useState } from "react";
-import { mutate } from "swr";
+import useSWR, { mutate } from "swr";
+import { OrderTestDialog } from "./OrderTestDialog";
 import { useLabResultsPDF } from "../../lib/pdfUtils";
 
-// Define the test type
-interface LabTest {
-  name: string;
-  date: string;
-  user: string;
+
+interface LabOrder {
+  id: string;
+  lab_test: {
+    name: string;
+  };
+  created_at: string;
+  patient_details: {
+    first_name: string;
+    last_name: string;
+  };
   status: string;
 }
 
-interface LabTestOrdersTableProps {
-  orders: LabOrder[];
-}
 
-export const LabTestOrdersTable = ({ orders }: LabTestOrdersTableProps) => {
+export const LabTestOrdersTable = () => {
   const toast = useToast();
   const [cancellingOrders, setCancellingOrders] = useState<Set<string>>(new Set());
   const [downloadingOrderId, setDownloadingOrderId] = useState<string | null>(null);
   const { data } = useLabResultsPDF(downloadingOrderId);
+
+  const { data } = useSWR<LabOrder[]>("/orders/", fetcher);
+
+  const orders = data?.orders ? data.orders : [];
 
   const handleCancelOrder = async (orderId: string) => {
     setCancellingOrders(prev => new Set([...prev, orderId]));
@@ -73,10 +82,10 @@ export const LabTestOrdersTable = ({ orders }: LabTestOrdersTableProps) => {
   }
 
   return (
-    <>
+    <Card>
+      <OrderTestDialog />
       <TableContainer>
         <Table variant="simple">
-          <TableCaption>Lab Tests Orders</TableCaption>
           <Thead>
             <Tr>
               <Th>Test Name</Th>
@@ -128,6 +137,6 @@ export const LabTestOrdersTable = ({ orders }: LabTestOrdersTableProps) => {
           </Tbody>
         </Table>
       </TableContainer>
-    </>
+    </Card>
   );
 }; 
