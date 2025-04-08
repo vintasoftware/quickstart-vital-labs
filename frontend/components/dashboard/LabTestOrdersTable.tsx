@@ -1,23 +1,32 @@
-import { TableContainer, Table, TableCaption, Thead, Tr, Th, Tbody, Td, Button, useToast } from "@chakra-ui/react";
-import { postData } from "../../lib/client";
-import { useState } from "react";
-import { mutate } from "swr";
+import { TableContainer, Table, Thead, Tr, Th, Tbody, Td, Button, useToast } from "@chakra-ui/react";
+import { Card } from "../Card";
+import { postData, fetcher } from "../../lib/client";
+import React, { useState } from "react";
+import useSWR, { mutate } from "swr";
+import { OrderTestDialog } from "./OrderTestDialog";
 
-// Define the test type
-interface LabTest {
-  name: string;
-  date: string;
-  user: string;
+
+interface LabOrder {
+  id: string;
+  lab_test: {
+    name: string;
+  };
+  created_at: string;
+  patient_details: {
+    first_name: string;
+    last_name: string;
+  };
   status: string;
 }
 
-interface LabTestOrdersTableProps {
-  orders: LabOrder[];
-}
 
-export const LabTestOrdersTable = ({ orders }: LabTestOrdersTableProps) => {
+export const LabTestOrdersTable = () => {
   const toast = useToast();
   const [cancellingOrders, setCancellingOrders] = useState<Set<string>>(new Set());
+
+  const { data } = useSWR<LabOrder[]>("/orders/", fetcher);
+
+  const orders = data?.orders ? data.orders : [];
 
   const handleCancelOrder = async (orderId: string) => {
     setCancellingOrders(prev => new Set([...prev, orderId]));
@@ -52,50 +61,50 @@ export const LabTestOrdersTable = ({ orders }: LabTestOrdersTableProps) => {
     }
   };
 
-  console.log(orders);
-
   return (
-    <TableContainer>
-      <Table variant="simple">
-        <TableCaption>Lab Tests Orders</TableCaption>
-        <Thead>
-          <Tr>
-            <Th>Test Name</Th>
-            <Th>Date</Th>
-            <Th>User</Th>
-            <Th>Status</Th>
-            <Th>Actions</Th>
-          </Tr>
-        </Thead>
-        <Tbody>
-          {orders.length > 0 ? (
-            orders.map((order: any, index: any) => (
-              <Tr key={index}>
-                <Td>{order.lab_test.name}</Td>
-                <Td>{order.created_at}</Td>
-                <Td>{order.patient_details.first_name} {order.patient_details.last_name}</Td>
-                <Td>{order.status}</Td>
-                <Td>
-                  <Button
-                    colorScheme="red"
-                    size="sm"
-                    onClick={() => handleCancelOrder(order.id)}
-                    isDisabled={order.status === 'cancelled'}
-                    isLoading={cancellingOrders.has(order.id)}
-                    loadingText="Cancelling"
-                  >
-                    Cancel Order
-                  </Button>
-                </Td>
-              </Tr>
-            ))
-          ) : (
+    <Card>
+      <OrderTestDialog />
+      <TableContainer>
+        <Table variant="simple">
+          <Thead>
             <Tr>
-              <Td colSpan={5} textAlign="center">No lab orders available</Td>
+              <Th>Test Name</Th>
+              <Th>Date</Th>
+              <Th>User</Th>
+              <Th>Status</Th>
+              <Th>Actions</Th>
             </Tr>
-          )}
-        </Tbody>
-      </Table>
-    </TableContainer>
+          </Thead>
+          <Tbody>
+            {orders.length > 0 ? (
+              orders.map((order: any, index: any) => (
+                <Tr key={index}>
+                  <Td>{order.lab_test.name}</Td>
+                  <Td>{order.created_at}</Td>
+                  <Td>{order.patient_details.first_name} {order.patient_details.last_name}</Td>
+                  <Td>{order.status}</Td>
+                  <Td>
+                    <Button
+                      colorScheme="red"
+                      size="sm"
+                      onClick={() => handleCancelOrder(order.id)}
+                      isDisabled={order.status === 'cancelled'}
+                      isLoading={cancellingOrders.has(order.id)}
+                      loadingText="Cancelling"
+                    >
+                      Cancel Order
+                    </Button>
+                  </Td>
+                </Tr>
+              ))
+            ) : (
+              <Tr>
+                <Td colSpan={5} textAlign="center">No lab orders available</Td>
+              </Tr>
+            )}
+          </Tbody>
+        </Table>
+      </TableContainer>
+    </Card>
   );
 }; 

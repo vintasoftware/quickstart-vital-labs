@@ -217,11 +217,9 @@ export const OrderTestDialog = () => {
     return Object.values(requiredFields).every(field => field && field.toString().trim() !== '');
   };
 
-  // Get the selected template's collection methods
-  const selectedTemplate = templates?.find(t => t.id === selectedTest);
-
   return (
     <Box>
+      <Heading size="md" style={{ marginBottom: "25px" }}>Lab Test Orders</Heading>
       <Button colorScheme="blue" onClick={onOpen}>Order Test</Button>
       
       <Modal isOpen={isOpen} onClose={onClose} size="6xl">
