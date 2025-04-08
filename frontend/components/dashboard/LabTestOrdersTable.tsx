@@ -25,7 +25,7 @@ export const LabTestOrdersTable = () => {
   const toast = useToast();
   const [cancellingOrders, setCancellingOrders] = useState<Set<string>>(new Set());
   const [downloadingOrderId, setDownloadingOrderId] = useState<string | null>(null);
-  const { data } = useLabResultsPDF(downloadingOrderId);
+  const { pdfData } = useLabResultsPDF(downloadingOrderId);
 
   const { data } = useSWR<LabOrder[]>("/orders/", fetcher);
 
@@ -71,7 +71,7 @@ export const LabTestOrdersTable = () => {
   };
 
   // Reset downloadingOrderId when download completes
-  if (data && downloadingOrderId) {
+  if (pdfData && downloadingOrderId) {
     setDownloadingOrderId(null);
     toast({
       title: "Results downloaded",
