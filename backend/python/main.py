@@ -10,6 +10,8 @@ from starlette.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import os
 from dotenv import load_dotenv
+from fastapi.responses import StreamingResponse, Response
+import io
 load_dotenv()
 
 app = FastAPI()
@@ -134,3 +136,22 @@ def cancel_order(order_id: str):
 @app.get("/labs/")
 def get_labs():
     return client.lab_tests.get_labs()
+
+
+@app.get("/orders/{order_id}/results/pdf")
+def get_order_pdf(order_id: str):
+    try:
+        pdf_chunks = client.lab_tests.get_result_pdf(order_id=order_id)
+        pdf_data = b''.join(list(pdf_chunks))
+        
+        return Response(
+            content=pdf_data,
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f'attachment; filename="lab-results-{order_id}.pdf"'
+            }
+        )
+    except Exception as e:
+        # Let's also log the actual error to help debug
+        print(f"Error fetching PDF: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
