@@ -20,6 +20,17 @@ interface LabOrder {
   status: string;
 }
 
+const humanizeDate = (dateString: string) => {
+  const date = new Date(dateString);
+  const options: Intl.DateTimeFormatOptions = { 
+    year: 'numeric', 
+    month: 'short', 
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  };
+  return date.toLocaleDateString('en-US', options);
+};
 
 export const LabTestOrdersTable = () => {
   const toast = useToast();
@@ -113,7 +124,7 @@ export const LabTestOrdersTable = () => {
               orders.map((order: any, index: any) => (
                 <Tr key={index}>
                   <Td>{order.lab_test.name}</Td>
-                  <Td>{order.created_at}</Td>
+                  <Td>{humanizeDate(order.created_at)}</Td>
                   <Td>{order.patient_details.first_name} {order.patient_details.last_name}</Td>
                   <Td
                     textTransform="capitalize"
