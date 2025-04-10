@@ -126,13 +126,14 @@ export const LabTestOrdersTable = () => {
                     onClick={() => handleStatusClick(order)}
                   >
                     {order.status}
+                    {downloadingOrderId === order.id && " (Opening...)"}
                   </Td>
                   <Td>
                     <Button
                       colorScheme="red"
                       size="sm"
                       onClick={() => handleCancelOrder(order.id)}
-                      isDisabled={order.status === 'cancelled'}
+                      isDisabled={order.status === 'cancelled' || order.status === 'completed'}
                       isLoading={cancellingOrders.has(order.id)}
                       loadingText="Cancelling"
                     >
