@@ -1,7 +1,7 @@
 const API_URL = "http://0.0.0.0:8000";
 
 const BACKEND_IS_PYTHON = true;
-const URL_PREFIX = BACKEND_IS_PYTHON ? API_URL : "/api";
+export const URL_PREFIX = BACKEND_IS_PYTHON ? API_URL : "/api";
 
 export const fetcher = (url: string) =>
   fetch(`${URL_PREFIX}${url}`).then((res) => res.json());

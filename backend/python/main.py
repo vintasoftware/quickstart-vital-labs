@@ -138,7 +138,7 @@ def get_labs():
     return client.lab_tests.get_labs()
 
 
-@app.get("/orders/{order_id}/results/pdf")
+@app.get("/orders/{order_id}/results/pdf/")
 def get_order_pdf(order_id: str):
     try:
         pdf_chunks = client.lab_tests.get_result_pdf(order_id=order_id)

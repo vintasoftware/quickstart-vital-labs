@@ -1,43 +1,32 @@
-import useSWR from 'swr';
+import { URL_PREFIX } from './client';
 
-// Custom fetcher for PDF data
-const pdfFetcher = async (url: string) => {
-  const response = await fetch(url, {
-    method: 'GET',
-    headers: {
-      'Accept': 'application/pdf',
-    },
-  });
-  
-  if (!response.ok) {
-    throw new Error('Failed to fetch PDF');
-  }
-  
-  return response.blob();
-};
-
-export const useLabResultsPDF = (orderId: string | null) => {
-  const { data: pdfBlob, error, isLoading } = useSWR(
-    orderId ? `/orders/${orderId}/results/pdf` : null,
-    pdfFetcher
-  );
-
-  const downloadPDF = async () => {
-    if (!pdfBlob) return;
-
-    const url = window.URL.createObjectURL(pdfBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `lab-results-${orderId}.pdf`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
+export const useLabResultsPDF = () => {
+  const downloadPDF = async (orderId: string) => {
+    try {
+      const response = await fetch(`${URL_PREFIX}/orders/${orderId}/results/pdf/`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/pdf',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch PDF');
+      }
+      
+      const blob = await response.blob();
+      const pdfUrl = window.URL.createObjectURL(blob);
+      window.open(pdfUrl, '_blank');
+      
+      setTimeout(() => {
+        window.URL.revokeObjectURL(pdfUrl);
+      }, 100);
+      
+      return true;
+    } catch (err) {
+      return false;
+    }
   };
 
-  return {
-    downloadPDF,
-    error,
-    isLoading
-  };
+  return { downloadPDF };
 };

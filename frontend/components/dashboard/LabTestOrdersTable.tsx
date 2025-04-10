@@ -25,7 +25,7 @@ export const LabTestOrdersTable = () => {
   const toast = useToast();
   const [cancellingOrders, setCancellingOrders] = useState<Set<string>>(new Set());
   const [downloadingOrderId, setDownloadingOrderId] = useState<string | null>(null);
-  const { pdfData } = useLabResultsPDF(downloadingOrderId);
+  const { downloadPDF } = useLabResultsPDF();
 
   const { data } = useSWR<LabOrder[]>("/orders/", fetcher);
 
@@ -64,22 +64,35 @@ export const LabTestOrdersTable = () => {
     }
   };
 
-  const handleStatusClick = (order: any) => {
+  const handleStatusClick = async (order: any) => {
     if (order.status.toUpperCase() === "COMPLETED") {
-      setDownloadingOrderId(order.id);
+      try {
+        setDownloadingOrderId(order.id);
+        const success = await downloadPDF(order.id);
+        
+        if (success) {
+          toast({
+            title: "Results opened in new tab",
+            status: "success",
+            duration: 3000,
+            isClosable: true,
+          });
+        } else {
+          throw new Error('Failed to download PDF');
+        }
+      } catch (error) {
+        toast({
+          title: "Failed to open results",
+          description: "Please try again",
+          status: "error",
+          duration: 3000,
+          isClosable: true,
+        });
+      } finally {
+        setDownloadingOrderId(null);
+      }
     }
   };
-
-  // Reset downloadingOrderId when download completes
-  if (pdfData && downloadingOrderId) {
-    setDownloadingOrderId(null);
-    toast({
-      title: "Results downloaded",
-      status: "success",
-      duration: 3000,
-      isClosable: true,
-    });
-  }
 
   return (
     <Card>
@@ -113,7 +126,6 @@ export const LabTestOrdersTable = () => {
                     onClick={() => handleStatusClick(order)}
                   >
                     {order.status}
-                    {downloadingOrderId === order.id && " (Downloading...)"}
                   </Td>
                   <Td>
                     <Button
