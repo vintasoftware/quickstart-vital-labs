@@ -1,9 +1,10 @@
 import { TableContainer, Table, Thead, Tr, Th, Tbody, Td, Button, useToast } from "@chakra-ui/react";
 import { Card } from "../Card";
 import { postData, fetcher } from "../../lib/client";
-import React, { useState } from "react";
+import { useState } from "react";
 import useSWR, { mutate } from "swr";
 import { OrderTestDialog } from "./OrderTestDialog";
+import { useLabResultsPDF } from "../../lib/pdfUtils";
 
 
 interface LabOrder {
@@ -19,10 +20,23 @@ interface LabOrder {
   status: string;
 }
 
+const humanizeDate = (dateString: string) => {
+  const date = new Date(dateString);
+  const options: Intl.DateTimeFormatOptions = { 
+    year: 'numeric', 
+    month: 'short', 
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  };
+  return date.toLocaleDateString('en-US', options);
+};
 
 export const LabTestOrdersTable = () => {
   const toast = useToast();
   const [cancellingOrders, setCancellingOrders] = useState<Set<string>>(new Set());
+  const [downloadingOrderId, setDownloadingOrderId] = useState<string | null>(null);
+  const { downloadPDF } = useLabResultsPDF();
 
   const { data } = useSWR<LabOrder[]>("/orders/", fetcher);
 
@@ -61,6 +75,36 @@ export const LabTestOrdersTable = () => {
     }
   };
 
+  const handleStatusClick = async (order: any) => {
+    if (order.status.toUpperCase() === "COMPLETED") {
+      try {
+        setDownloadingOrderId(order.id);
+        const success = await downloadPDF(order.id);
+        
+        if (success) {
+          toast({
+            title: "Results opened in new tab",
+            status: "success",
+            duration: 3000,
+            isClosable: true,
+          });
+        } else {
+          throw new Error('Failed to download PDF');
+        }
+      } catch (error) {
+        toast({
+          title: "Failed to open results",
+          description: "Please try again",
+          status: "error",
+          duration: 3000,
+          isClosable: true,
+        });
+      } finally {
+        setDownloadingOrderId(null);
+      }
+    }
+  };
+
   return (
     <Card>
       <OrderTestDialog />
@@ -80,15 +124,27 @@ export const LabTestOrdersTable = () => {
               orders.map((order: any, index: any) => (
                 <Tr key={index}>
                   <Td>{order.lab_test.name}</Td>
-                  <Td>{order.created_at}</Td>
+                  <Td>{humanizeDate(order.created_at)}</Td>
                   <Td>{order.patient_details.first_name} {order.patient_details.last_name}</Td>
-                  <Td>{order.status}</Td>
+                  <Td
+                    textTransform="capitalize"
+                    cursor={order.status.toUpperCase() === "COMPLETED" ? "pointer" : "default"}
+                    color={order.status.toUpperCase() === "COMPLETED" ? "blue.500" : "inherit"}
+                    opacity={downloadingOrderId === order.id ? 0.5 : 1}
+                    _hover={{
+                      textDecoration: order.status.toUpperCase() === "COMPLETED" ? "underline" : "none"
+                    }}
+                    onClick={() => handleStatusClick(order)}
+                  >
+                    {order.status}
+                    {downloadingOrderId === order.id && " (Opening...)"}
+                  </Td>
                   <Td>
                     <Button
                       colorScheme="red"
                       size="sm"
                       onClick={() => handleCancelOrder(order.id)}
-                      isDisabled={order.status === 'cancelled'}
+                      isDisabled={order.status === 'cancelled' || order.status === 'completed'}
                       isLoading={cancellingOrders.has(order.id)}
                       loadingText="Cancelling"
                     >
