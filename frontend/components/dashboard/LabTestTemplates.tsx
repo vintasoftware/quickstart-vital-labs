@@ -1,8 +1,7 @@
-import { VStack, Heading, Text, Box, Table, TableContainer, Thead, Tr, Th, Tbody, Td } from "@chakra-ui/react";
+import { VStack, Button, Heading, Text, Box, Table, TableContainer, Thead, Tr, Th, Tbody, Td } from "@chakra-ui/react";
 import { useState, useEffect } from "react";
 import { Card } from "../Card";
 import { CreateLabTestTemplateDialog } from "./CreateLabTestTemplateDialog";
-import { EditLabTestTemplateDialog } from "./EditLabTestTemplateDialog";
 import { fetcher } from "../../lib/client";
 import useSWR from "swr";
 
@@ -65,37 +64,26 @@ export const LabTestTemplates = ({ initialTemplates = [] }: LabTestTemplatesProp
           <Thead>
             <Tr>
               <Th>Template Name</Th>
-              <Th>Description</Th>
-              <Th>Actions</Th>
+              <Th>Biomarkers</Th>
             </Tr>
           </Thead>
           <Tbody>
             {templates?.length > 0 ? (
               templates.map((template: LabTestTemplate) => (
-                <>
-                  <Tr key={template.id} cursor="pointer" onClick={() => toggleTemplateExpansion(template.id)}>
+                  <Tr key={template.id}>
                     <Td fontWeight="bold">{template?.name}</Td>
-                    <Td>{template?.description}</Td>
-                    <Td onClick={(e) => e.stopPropagation()}>
-                      <EditLabTestTemplateDialog 
-                        template={{
-                          ...template,
-                          tests: template?.tests || []  // Ensure tests is always an array
-                        }} 
-                      />
-                    </Td>
+                    <Td minWidth="275px" maxWidth="275px">
+                      <Button onClick={() => toggleTemplateExpansion(template.id)}>View Biomarkers</Button>
+                      {expandedTemplate === template.id && (
+                        <Tr key={`${template.id}-markers`}>
+                          <Td colSpan={3} p={0}>
+                            <Box pl={8} pr={4} py={2} bg="gray.50">
+                              <MarkersList templateId={template.id} />
+                            </Box>
+                          </Td>
+                        </Tr>
+                      )}</Td>
                   </Tr>
-                  {expandedTemplate === template.id && (
-                    <Tr key={`${template.id}-markers`}>
-                      <Td colSpan={3} p={0}>
-                        <Box pl={8} pr={4} py={2} bg="gray.50">
-                          <Text fontWeight="medium" mb={2}>Included Markers:</Text>
-                          <MarkersList templateId={template.id} />
-                        </Box>
-                      </Td>
-                    </Tr>
-                  )}
-                </>
               ))
             ) : (
               <Tr>
@@ -109,7 +97,6 @@ export const LabTestTemplates = ({ initialTemplates = [] }: LabTestTemplatesProp
   );
 };
 
-// Create a separate component for markers to handle the data fetching
 const MarkersList = ({ templateId }: { templateId: number }) => {
   const { data: markerData } = useSWR(
     `/tests/markers/${templateId}/`,
@@ -121,7 +108,7 @@ const MarkersList = ({ templateId }: { templateId: number }) => {
   }
 
   return (
-    <VStack align="start" spacing={1}>
+    <VStack align="start" spacing={1} style={{ "text-wrap": "wrap", "margin-top": "10px" }}>
       {markerData.markers?.map((marker: Marker) => (
         <Text key={marker.id} fontSize="sm">
           • {marker.name}
